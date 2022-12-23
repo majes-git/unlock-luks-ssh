@@ -20,8 +20,6 @@ def parse_arguments():
         description='Unlock a Linux system during pre-boot (dropbear-initramfs)')
     parser.add_argument('--hostname', help='target hostname', required=True)
     parser.add_argument('--port', help='target port', type=int, default=22)
-    # parser.add_argument('--identity-file', default='id_rsa',
-    #                     help='identity file for ssh login')
     parser.add_argument('--passphrase-file', required=True,
                         help='passphrase file for luks unlock')
     return parser.parse_args()
@@ -73,8 +71,6 @@ def main():
     while True:
         if system_is_waiting_for_passphrase(args.hostname, args.port):
             unlock_system(args.hostname, args.port, passphrase)
-        # else:
-        #     print('not waiting')
         time.sleep(DELAY)
 
 
