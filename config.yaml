@@ -1,7 +1,7 @@
 name: "unlock-luks-ssh"
 description: "Unlock a Linux system during pre-boot (dropbear-initramfs)"
 url: "https://github.com/majes-git/unlock-luks-ssh"
-version: "1.0.0"
+version: "1.0.1"
 slug: "unlock-luks-ssh"
 init: false
 arch:

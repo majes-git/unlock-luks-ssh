@@ -55,6 +55,11 @@ def system_is_waiting_for_passphrase(hostname, port=22):
     except socket.timeout:
         # hostname likely not online
         return False
+    except OSError as e:
+        if e.errno == 113:
+            # Host is unreachable
+            return False
+        raise e
     finally:
         s.close()
 
