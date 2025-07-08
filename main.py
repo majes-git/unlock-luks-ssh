@@ -2,6 +2,7 @@
 
 import argparse
 import datetime
+import json
 import pexpect
 import socket
 import sys
@@ -15,18 +16,31 @@ def log(*messages):
     print('{:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now()), *messages)
     sys.stdout.flush()
 
+
 def log_not_repeat(*messages):
     if not NO_REPEAT:
         log(*messages)
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description='Unlock a Linux system during pre-boot (dropbear-initramfs)')
-    parser.add_argument('--hostname', help='target hostname', required=True)
-    parser.add_argument('--port', help='target port', type=int, default=22)
-    parser.add_argument('--passphrase-file', required=True,
-                        help='passphrase file for luks unlock')
+        description='Unlock Linux systems during pre-boot (dropbear-initramfs)')
+    parser.add_argument('--options', '-o', help='options filename',
+                        default='/data/options.json')
     return parser.parse_args()
+
+
+def get_hosts(filename):
+    active_hosts = []
+    with open(filename) as fd:
+        hosts = json.load(fd).get('hosts', [])
+        for host in hosts:
+            if not host.get('enabled'):
+                continue
+            if not host.get('port'):
+                host['port'] = 22
+            active_hosts.append(host)
+        return active_hosts
 
 
 def unlock_system(hostname, port, passphrase):
@@ -36,7 +50,7 @@ def unlock_system(hostname, port, passphrase):
     child = pexpect.spawn('/usr/bin/ssh {} -p {} {}@{}'.format(
         ssh_options, port, ssh_user, hostname))
 
-    log_not_repeat('Trying to unlock system...')
+    log_not_repeat(f'Trying to unlock host "{hostname}"...')
     try:
         selection = child.expect(
             ['Permission denied',
@@ -70,7 +84,8 @@ def unlock_system(hostname, port, passphrase):
     except pexpect.exceptions.EOF:
         log('Unexpected end of file for SSH connection.')
 
-def system_is_waiting_for_passphrase(hostname, port=22):
+
+def system_is_waiting_for_passphrase(hostname, port):
     # try to open a socket in order to check if ssh listening at hostname/port
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -93,17 +108,17 @@ def system_is_waiting_for_passphrase(hostname, port=22):
 
 def main():
     args = parse_arguments()
-
-    # read passphrase file
-    with open(args.passphrase_file) as fd:
-        passphrase = fd.read()
+    hosts = get_hosts(args.options)
 
     # main loop: check every DELAY seconds if system is waiting for passphrase
-    log('Monitoring target system:', args.hostname)
+    for host in hosts:
+        log('Monitoring target system:', host['name'])
+
     while True:
-        if system_is_waiting_for_passphrase(args.hostname, args.port):
-            unlock_system(args.hostname, args.port, passphrase)
-        time.sleep(DELAY)
+        for host in hosts:
+            if system_is_waiting_for_passphrase(host['name'], host['port']):
+                unlock_system(host['name'], host['port'], host['passphrase'])
+            time.sleep(DELAY)
 
 
 if __name__ == '__main__':

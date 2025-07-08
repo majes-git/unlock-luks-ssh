@@ -1,16 +1,5 @@
 #!/usr/bin/with-contenv bashio
 
-# mandatory cmdline args
-args=""
-args="$args --hostname $(bashio::config 'hostname')"
-echo "$(bashio::config 'passphrase')" > passphrase
-args="$args --passphrase-file passphrase"
-
-# optional cmdline args
-if bashio::config.has_value 'port'; then
-    args="$args --port $(bashio::config 'port')"
-fi
-
 if [ ! -d /data/.ssh ]; then
     mkdir -m 700 /data/.ssh
 fi
@@ -26,6 +15,6 @@ echo ' The public key needs to be added to /etc/dropbear-initramfs/authorized_ke
 echo ' at the target system followed by running "update-initramfs -u"'
 echo '--------------------------------------------------------------------------------'
 
-cmd="python3 /main.py $args"
+cmd="python3 /main.py"
 echo "Running: $cmd"
 $cmd

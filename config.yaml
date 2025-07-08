@@ -1,7 +1,7 @@
 name: "unlock-luks-ssh"
-description: "Unlock a Linux system during pre-boot (dropbear-initramfs)"
+description: "Unlock Linux systems during pre-boot (dropbear-initramfs)"
 url: "https://github.com/majes-git/unlock-luks-ssh"
-version: "1.1.0"
+version: "2.0.0"
 slug: "unlock-luks-ssh"
 init: false
 arch:
@@ -12,6 +12,13 @@ arch:
   - i386
 startup: before
 schema:
-  hostname: str
-  port: "int?"
-  passphrase: str
+  hosts:
+    - name: str
+      port: "int?"
+      passphrase: str
+      enabled: bool
+options:
+  hosts:
+    - name: server.example.com
+      passphrase: secret
+      enabled: False
